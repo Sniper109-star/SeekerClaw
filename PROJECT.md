@@ -33,7 +33,7 @@ SeekerClaw is an Android app built for the Solana Seeker phone (also works on an
 | AI Provider | Anthropic Claude API | Opus 4.6 default, Sonnet 4.6, Sonnet 4.5, Haiku 4.5 |
 | Messaging | Telegram Bot API (grammy) | — |
 | Database | SQL.js (WASM SQLite) | 1.12.0 |
-| OpenClaw Parity | OpenClaw gateway (ported) | 2026.2.26 |
+| OpenClaw Parity | OpenClaw gateway (ported) | 2026.2.28 |
 | Web Search | Brave Search + Perplexity Sonar | — |
 | Wallet | Solana Web3.js + Jupiter API | — |
 | Build | Gradle (Kotlin DSL) | — |
@@ -215,15 +215,15 @@ User (Telegram) <--HTTPS--> Telegram API <--polling--> Node.js Gateway (on phone
 - **No browser/screen/canvas skills** — Can't be ported from OpenClaw (requires desktop environment)
 - **Ephemeral context** — Conversation history resets on Node.js restart (mitigated by session summaries)
 - **Single channel** — Telegram only (no Discord, WhatsApp, etc.)
-- **dApp Store live** — Available on Solana dApp Store (v1.4.1)
+- **dApp Store live** — Available on Solana dApp Store (v1.4.2)
 - **No light theme** — Dark only (DarkOps single theme)
 
 ## Stats
 
 | Metric | Count |
 |--------|-------|
-| Total commits | 311 |
-| PRs merged | 191 |
+| Total commits | 328 |
+| PRs merged | 199 |
 | Tools | 56 (9 Jupiter, 13 Android bridge, web search/fetch, memory, cron, skill_install, etc.) + MCP dynamic |
 | Skills | 35 (20 bundled + 13 workspace + 2 user-created) |
 | Android Bridge endpoints | 18+ |
@@ -264,6 +264,14 @@ User (Telegram) <--HTTPS--> Telegram API <--polling--> Node.js Gateway (on phone
 
 | Date | Feature | PR |
 |------|---------|-----|
+| 2026-03-01 | Docs: update README setup instructions to mention QR generator | direct |
+| 2026-03-01 | Chore: bump versionCode to 8 for dApp Store resubmission | direct |
+| 2026-02-28 | Docs: SAB-AUDIT-v7 — fix stale MCP rate limits in DIAGNOSTICS.md | direct |
+| 2026-02-28 | Fix: replace regex markdown parser with markdown-it for Telegram formatting (BAT-291) | #199 |
+| 2026-02-28 | Chore: bump version to 1.4.2 (code 7) | direct |
+| 2026-02-28 | Docs: bump OpenClaw parity to 2026.2.28, add tool-first guidance (BAT-280) | #198 |
+| 2026-02-28 | Fix: include API error reason in user-facing messages (BAT-289) | #197 |
+| 2026-02-28 | Fix: strip HEARTBEAT_OK from heartbeat responses (BAT-279) | #196 |
 | 2026-02-27 | Fix: Telegram message formatting — italic/bold nesting, link support, strikethrough, fallback logging | #194 (BAT-278) |
 | 2026-02-27 | Fix: OpenClaw parity 2026.2.26 — 5 bug fixes (tool name trim, result normalize, sendChatAction backoff, poll outage alert, BOT_COMMANDS_TOO_MUCH) | #193 (BAT-277) |
 | 2026-02-27 | Chore: add Ko-fi funding option | direct |
