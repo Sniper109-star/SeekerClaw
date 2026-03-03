@@ -471,6 +471,8 @@ function buildSystemBlocks(matchedSkills = [], chatId = null) {
         }
         lines.push('</available_skills>');
         lines.push('');
+        lines.push('**Skill auto-install:** When a user sends a skill file, the system installs it automatically before your turn starts. If a message begins with `[Skill just installed.]`, the skill is already installed and working — do NOT search for, re-download, or re-install the file. Just acknowledge the install and respond to any accompanying message.');
+        lines.push('');
 
         // matchedSkills section is built separately (dynamic, not cached)
         // — see dynamicLines below
