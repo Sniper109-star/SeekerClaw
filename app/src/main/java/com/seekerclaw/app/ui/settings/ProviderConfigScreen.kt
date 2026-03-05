@@ -92,12 +92,25 @@ fun ProviderConfigScreen(onBack: () -> Unit) {
     }
 
     fun switchProvider(newProviderId: String) {
-        saveField("provider", newProviderId)
-        // Auto-switch model to the new provider's default if current model doesn't belong
+        val oldProviderId = config?.provider ?: "claude"
         val currentModel = config?.model ?: ""
+
+        // Remember the current model for the old provider before switching
+        val prefs = context.getSharedPreferences("seekerclaw_prefs", android.content.Context.MODE_PRIVATE)
+        prefs.edit().putString("lastModel_$oldProviderId", currentModel).apply()
+
+        saveField("provider", newProviderId)
+
+        // Restore last-used model for new provider, or fall back to first model
         val modelsForNew = modelsForProvider(newProviderId)
+        val savedModel = prefs.getString("lastModel_$newProviderId", null)
+        val restoredModel = if (savedModel != null && modelsForNew.any { it.id == savedModel }) {
+            savedModel
+        } else {
+            modelsForNew.firstOrNull()?.id ?: ""
+        }
         if (modelsForNew.none { it.id == currentModel }) {
-            saveField("model", modelsForNew.firstOrNull()?.id ?: "")
+            saveField("model", restoredModel)
         }
         Toast.makeText(
             context,
