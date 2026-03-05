@@ -294,12 +294,45 @@ const TOOL_STATUS_MAP = {
 // keys. Conversational keys fill gaps and can be re-saved by the agent.
 // ============================================================================
 
-const _agentKeyMap = { perplexity: 'perplexityApiKey', brave: 'braveApiKey', jupiter: 'jupiterApiKey' };
+// Known mappings for keys that come from Android Settings (config.json).
+// These get priority — agent_settings.json keys never overwrite them.
+const _knownKeyMap = { perplexity: 'perplexityApiKey', brave: 'braveApiKey', jupiter: 'jupiterApiKey' };
 
-// Snapshot which keys came from Android Settings at startup (immutable)
+// Snapshot which keys came from Android Settings at startup (immutable).
+// Protect ALL existing *ApiKey fields, not just known ones.
 const _androidKeys = {};
-for (const [, configField] of Object.entries(_agentKeyMap)) {
-    if (config[configField]) _androidKeys[configField] = true;
+for (const key of Object.keys(config)) {
+    if (key.endsWith('ApiKey') && config[key]) _androidKeys[key] = true;
+}
+
+// Normalize service name to lowerCamelCase to align with envToCamelCase in skills.js.
+// "dune" → "dune", "DUNE" → "dune", "dune_analytics" → "duneAnalytics"
+// Preserves internal capitals for already-camelCase inputs: "duneApiKey" → "duneApiKey"
+function normalizeService(service) {
+    if (!service) return '';
+    const parts = String(service).trim()
+        .replace(/[^A-Za-z0-9]+/g, ' ').split(' ').filter(Boolean);
+    if (!parts.length) return '';
+    // First token: preserve internal capitals if mixed case (camelCase/PascalCase)
+    const first = parts[0];
+    const hasLower = /[a-z]/.test(first);
+    const hasUpper = /[A-Z]/.test(first);
+    const normalizedFirst = (hasLower && hasUpper)
+        ? first.charAt(0).toLowerCase() + first.slice(1)
+        : first.toLowerCase();
+    const rest = parts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase());
+    return normalizedFirst + rest.join('');
+}
+
+// Convert service name to config field: "dune" → "duneApiKey", "brave" → "braveApiKey"
+function serviceToConfigField(service) {
+    if (_knownKeyMap[service]) return _knownKeyMap[service];
+    const normalized = normalizeService(service);
+    if (!normalized) return '';
+    // Avoid double suffix: "DUNE_API_KEY" → "duneApiKey" (not "duneApiKeyApiKey")
+    // Normalize suffix casing to exactly "ApiKey" so endsWith('ApiKey') checks work
+    if (/[Aa]pi[Kk]ey$/.test(normalized)) return normalized.replace(/[Aa]pi[Kk]ey$/, 'ApiKey');
+    return `${normalized}ApiKey`;
 }
 
 function syncAgentApiKeys() {
@@ -308,15 +341,18 @@ function syncAgentApiKeys() {
         if (!fs.existsSync(settingsPath)) return;
         const s = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
         if (!s.apiKeys || typeof s.apiKeys !== 'object') return;
-        for (const [service, configField] of Object.entries(_agentKeyMap)) {
+        // Dynamic: load ALL keys from apiKeys.*, not just known ones
+        for (const [service, agentKey] of Object.entries(s.apiKeys)) {
+            const configField = serviceToConfigField(service);
+            if (!configField) continue;
             // Android Settings keys always win — don't overwrite
             if (_androidKeys[configField]) continue;
-            const agentKey = s.apiKeys[service];
-            if (agentKey && typeof agentKey === 'string' && agentKey.trim()) {
+            if (agentKey && typeof agentKey === 'string' && agentKey.trim() && agentKey.length <= 512) {
                 const normalized = normalizeSecret(agentKey);
                 if (normalized && config[configField] !== normalized) {
                     config[configField] = normalized;
-                    log(`[Config] Loaded ${service} API key from agent_settings.json`, 'INFO');
+                    // Log configField (sanitized) instead of raw service name to prevent log injection
+                    log(`[Config] Loaded API key → config.${configField} from agent_settings.json`, 'INFO');
                 }
             }
         }
